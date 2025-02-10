@@ -53,6 +53,9 @@ import net.runelite.client.util.Text;
 public class TobNoticeBoardPlugin extends Plugin
 {
 	private static final int DEFAULT_RGB = 0xff981f;
+	private static final int NOTICE_BOARD_COMPONENT_ID = 364;
+	private static final int LOBBY_COMPONENT_ID = 50;
+	public static final String CONFIG_KEY_HIGHLIGHT_LOBBY = "highlightInLobby";
 
 	@Inject
 	private Client client;
@@ -80,6 +83,13 @@ public class TobNoticeBoardPlugin extends Plugin
 	{
 		if (event.getGroup().equals("tobnoticeboard"))
 		{
+			// Lobby highlighting has been disabled, reset the colors
+			if (event.getKey().equals(CONFIG_KEY_HIGHLIGHT_LOBBY) && !config.highlightInLobby())
+			{
+				setLobbyColors(DEFAULT_RGB, DEFAULT_RGB, DEFAULT_RGB);
+				return;
+			}
+
 			setNoticeBoard();
 		}
 	}
@@ -89,7 +99,7 @@ public class TobNoticeBoardPlugin extends Plugin
 	{
 		clientThread.invokeLater(() ->
 		{
-			if (widgetLoaded.getGroupId() == 364)
+			if (widgetLoaded.getGroupId() == NOTICE_BOARD_COMPONENT_ID || widgetLoaded.getGroupId() == LOBBY_COMPONENT_ID)
 			{
 				setNoticeBoard();
 			}
@@ -105,11 +115,11 @@ public class TobNoticeBoardPlugin extends Plugin
 		}
 	}
 
-	private void setNameColors(int friendColor, int clanColor, int ignoreColor)
+	private void setNoticeBoardColors(int friendColor, int clanColor, int ignoreColor)
 	{
 		for (int childID = 17; childID < 62; ++childID)
 		{
-			Widget noticeBoard = client.getWidget(364, childID);
+			Widget noticeBoard = client.getWidget(NOTICE_BOARD_COMPONENT_ID, childID);
 
 			if (noticeBoard != null && noticeBoard.getName() != null && noticeBoard.getChildren() != null)
 			{
@@ -117,28 +127,56 @@ public class TobNoticeBoardPlugin extends Plugin
 				{
 					if (noticeBoardChild.getIndex() == 3)
 					{
-						NameableContainer<Ignore> ignoreContainer = client.getIgnoreContainer();
-						NameableContainer<Friend> friendContainer = client.getFriendContainer();
-
-						if (ignoreContainer.findByName(Text.removeTags(noticeBoard.getName())) != null)
-						{
-							noticeBoardChild.setTextColor(config.highlightIgnored() ? ignoreColor : DEFAULT_RGB);
-						}
-						else if (friendContainer.findByName(Text.removeTags(noticeBoard.getName())) != null)
-						{
-							noticeBoardChild.setTextColor(config.highlightFriends() ? friendColor : DEFAULT_RGB);
-						}
-						else if (client.getFriendsChatManager() != null)
-						{
-							for (FriendsChatMember member : client.getFriendsChatManager().getMembers())
-							{
-								if (Text.toJagexName(member.getName()).equals(Text.removeTags(noticeBoard.getName())))
-								{
-									noticeBoardChild.setTextColor(config.highlightClan() ? clanColor : DEFAULT_RGB);
-								}
-							}
-						}
+						updatePlayerName(noticeBoardChild, noticeBoard.getName(), friendColor, clanColor, ignoreColor);
 					}
+				}
+			}
+		}
+	}
+
+	private void setLobbyColors(int friendColor, int clanColor, int ignoreColor)
+	{
+		int[] children = {27, 42}; // 0 - lobby, 1 - lobby applicants
+
+		for (int childID : children)
+		{
+			Widget noticeBoard = client.getWidget(LOBBY_COMPONENT_ID, childID);
+
+			if (noticeBoard != null && noticeBoard.getName() != null && noticeBoard.getChildren() != null)
+			{
+				for (Widget noticeBoardChild : noticeBoard.getChildren())
+				{
+					// each row is 11 widgets long, the second (idx: 1) widget is the player name
+					if (noticeBoardChild.getIndex() % 11 == 1)
+					{
+						updatePlayerName(noticeBoardChild, noticeBoardChild.getText(), friendColor, clanColor, ignoreColor);
+					}
+				}
+			}
+		}
+	}
+
+	private void updatePlayerName(Widget noticeBoardChild, String nameText, int friendColor, int clanColor, int ignoreColor)
+	{
+		NameableContainer<Ignore> ignoreContainer = client.getIgnoreContainer();
+		NameableContainer<Friend> friendContainer = client.getFriendContainer();
+		String playerName = Text.removeTags(nameText);
+
+		if (ignoreContainer.findByName(playerName) != null)
+		{
+			noticeBoardChild.setTextColor(config.highlightIgnored() ? ignoreColor : DEFAULT_RGB);
+		}
+		else if (friendContainer.findByName(playerName) != null)
+		{
+			noticeBoardChild.setTextColor(config.highlightFriends() ? friendColor : DEFAULT_RGB);
+		}
+		else if (client.getFriendsChatManager() != null)
+		{
+			for (FriendsChatMember member : client.getFriendsChatManager().getMembers())
+			{
+				if (Text.toJagexName(member.getName()).equals(playerName))
+				{
+					noticeBoardChild.setTextColor(config.highlightClan() ? clanColor : DEFAULT_RGB);
 				}
 			}
 		}
@@ -146,12 +184,22 @@ public class TobNoticeBoardPlugin extends Plugin
 
 	private void setNoticeBoard()
 	{
-		setNameColors(config.friendColor().getRGB(), config.clanColor().getRGB(), config.ignoredColor().getRGB());
+		int friendColor = config.friendColor().getRGB();
+		int clanColor = config.clanColor().getRGB();
+		int ignoreColor = config.ignoredColor().getRGB();
+
+		setNoticeBoardColors(friendColor, clanColor, ignoreColor);
+
+		if (config.highlightInLobby())
+		{
+			setLobbyColors(friendColor, clanColor, ignoreColor);
+		}
 	}
 
 	private void unsetNoticeBoard()
 	{
-		setNameColors(DEFAULT_RGB, DEFAULT_RGB, DEFAULT_RGB);
+		setNoticeBoardColors(DEFAULT_RGB, DEFAULT_RGB, DEFAULT_RGB);
+		setLobbyColors(DEFAULT_RGB, DEFAULT_RGB, DEFAULT_RGB);
 	}
 
 	@Provides

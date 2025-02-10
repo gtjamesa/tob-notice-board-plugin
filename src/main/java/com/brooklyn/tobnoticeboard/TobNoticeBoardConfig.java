@@ -98,4 +98,15 @@ public interface TobNoticeBoardConfig extends Config
 	{
 		return new Color(182, 0, 0);
 	}
+
+	@ConfigItem(
+		keyName = TobNoticeBoardPlugin.CONFIG_KEY_HIGHLIGHT_LOBBY,
+		name = "Highlight in Lobby",
+		description = "Whether or not to highlight names in a lobby",
+		position = 7
+	)
+	default boolean highlightInLobby()
+	{
+		return true;
+	}
 }
