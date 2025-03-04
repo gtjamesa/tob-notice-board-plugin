@@ -72,7 +72,13 @@ public class FriendNoteManager
 	public void onMenuEntryAdded(MenuEntryAdded event)
 	{
 		final int groupId = WidgetUtil.componentToInterface(event.getActionParam1());
-//		log.debug("onMenuEntryAdded: {} / {}", event.getActionParam1(), groupId);
+
+		if (event.getActionParam1() == 0) {
+			return;
+		}
+
+		log.debug("onMenuEntryAdded: {} / {} / {} = {} : {}", event.getActionParam0(), event.getActionParam1(), groupId, event.getOption(), Text.removeTags(event.getTarget()));
+		log.debug("{}", event);
 
 		// Look for "Message" on friends list
 		if (groupId == TobNoticeBoardPlugin.LOBBY_COMPONENT_ID)
