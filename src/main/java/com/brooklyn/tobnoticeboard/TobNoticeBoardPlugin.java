@@ -162,6 +162,12 @@ public class TobNoticeBoardPlugin extends Plugin
 		NameableContainer<Friend> friendContainer = client.getFriendContainer();
 		String playerName = Text.removeTags(nameText);
 
+		// Don't highlight the local player
+		if (playerName.equals(client.getLocalPlayer().getName()))
+		{
+			return;
+		}
+
 		if (ignoreContainer.findByName(playerName) != null)
 		{
 			noticeBoardChild.setTextColor(config.highlightIgnored() ? ignoreColor : DEFAULT_RGB);
