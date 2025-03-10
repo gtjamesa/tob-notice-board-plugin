@@ -1,8 +1,10 @@
 package com.brooklyn.tobnoticeboard.friendnotes;
 
+import com.brooklyn.tobnoticeboard.TobNoticeBoardConfig;
 import com.brooklyn.tobnoticeboard.TobNoticeBoardPlugin;
 import com.google.common.base.Strings;
 import java.awt.image.BufferedImage;
+import java.util.Optional;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
 import lombok.Getter;
@@ -12,6 +14,8 @@ import net.runelite.api.widgets.WidgetUtil;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.game.ChatIconManager;
+import net.runelite.client.plugins.Plugin;
+import net.runelite.client.plugins.PluginManager;
 import net.runelite.client.ui.overlay.OverlayManager;
 import net.runelite.client.util.ImageUtil;
 import net.runelite.client.util.Text;
@@ -24,12 +28,15 @@ import net.runelite.client.util.Text;
 @Slf4j
 public class FriendNoteManager
 {
-	private static final String CONFIG_GROUP = "friendNotes";
-	private static final String KEY_PREFIX = "note_";
+	private static final String FRIEND_NOTES_CONFIG_GROUP = "friendNotes";
+	private static final String FRIEND_NOTES_KEY_PREFIX = "note_";
 	private static final int ICON_WIDTH = 14;
 	private static final int ICON_HEIGHT = 12;
 	private int iconId = -1;
 	private int chatIconIndex = -1;
+
+	@Inject
+	private TobNoticeBoardConfig config;
 
 	@Inject
 	private ConfigManager configManager;
@@ -42,6 +49,9 @@ public class FriendNoteManager
 
 	@Inject
 	private FriendNoteOverlay overlay;
+
+	@Inject
+	private PluginManager pluginManager;
 
 	@Getter
 	private HoveredFriend hoveredFriend = null;
@@ -65,7 +75,7 @@ public class FriendNoteManager
 	public String getNote(String displayName)
 	{
 		final String sanitizedName = Text.toJagexName(Text.removeTags(displayName));
-		return configManager.getConfiguration(CONFIG_GROUP, KEY_PREFIX + sanitizedName);
+		return configManager.getConfiguration(FRIEND_NOTES_CONFIG_GROUP, FRIEND_NOTES_KEY_PREFIX + sanitizedName);
 	}
 
 	@Subscribe
@@ -129,5 +139,15 @@ public class FriendNoteManager
 
 		final BufferedImage resized = ImageUtil.resizeImage(iconImg, ICON_WIDTH, ICON_HEIGHT);
 		iconId = chatIconManager.registerChatIcon(resized);
+	}
+
+	public boolean isEnabled()
+	{
+		if (!config.friendNotes()) {
+			return false;
+		}
+
+		final Optional<Plugin> friendNotePlugin = pluginManager.getPlugins().stream().filter(p -> p.getName().equals("Friend Notes")).findFirst();
+		return friendNotePlugin.isPresent() && pluginManager.isPluginEnabled(friendNotePlugin.get());
 	}
 }

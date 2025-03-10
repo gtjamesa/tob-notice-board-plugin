@@ -58,6 +58,8 @@ public class TobNoticeBoardPlugin extends Plugin
 	public static final int NOTICE_BOARD_COMPONENT_ID = 364;
 	public static final int LOBBY_COMPONENT_ID = 50;
 	public static final String CONFIG_KEY_HIGHLIGHT_LOBBY = "highlightInLobby";
+	public static final String CONFIG_KEY_FRIEND_NOTES = "friendNotes";
+	private boolean friendNotesEnabled = false;
 
 	@Inject
 	private Client client;
@@ -173,10 +175,8 @@ public class TobNoticeBoardPlugin extends Plugin
 		NameableContainer<Ignore> ignoreContainer = client.getIgnoreContainer();
 		NameableContainer<Friend> friendContainer = client.getFriendContainer();
 		String playerName = Text.removeTags(nameText).trim();
-		String note = friendNotes.getNote(playerName);
-		Integer noteIcon = friendNotes.getNoteIcon();
-
-		log.debug("Player: {}, Note: {} ({})", playerName, note, noteIcon);
+		String note = null;
+		Integer noteIcon = null;
 
 		// Don't highlight the local player
 		if (playerName.equals(client.getLocalPlayer().getName()))
@@ -184,6 +184,16 @@ public class TobNoticeBoardPlugin extends Plugin
 			return;
 		}
 
+		// Fetch friend notes
+		if (friendNotesEnabled)
+		{
+			note = friendNotes.getNote(playerName);
+			noteIcon = friendNotes.getNoteIcon();
+
+			log.debug("Player: {}, Note: {} ({})", playerName, note, noteIcon);
+		}
+
+		// Highlight friend/clan/ignored players
 		if (ignoreContainer.findByName(playerName) != null)
 		{
 			noticeBoardChild.setTextColor(config.highlightIgnored() ? ignoreColor : DEFAULT_RGB);
@@ -215,6 +225,7 @@ public class TobNoticeBoardPlugin extends Plugin
 		int friendColor = config.friendColor().getRGB();
 		int clanColor = config.clanColor().getRGB();
 		int ignoreColor = config.ignoredColor().getRGB();
+		friendNotesEnabled = friendNotes.isEnabled();
 
 		setNoticeBoardColors(friendColor, clanColor, ignoreColor);
 
