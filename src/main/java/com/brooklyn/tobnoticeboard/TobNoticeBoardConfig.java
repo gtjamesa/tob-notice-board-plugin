@@ -74,7 +74,7 @@ public interface TobNoticeBoardConfig extends Config
 	)
 	default Color clanColor()
 	{
-		return new Color(170, 0, 255);
+		return new Color(0, 255, 255);
 	}
 
 	@ConfigItem(
