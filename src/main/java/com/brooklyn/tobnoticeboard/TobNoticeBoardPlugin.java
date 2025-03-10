@@ -175,22 +175,11 @@ public class TobNoticeBoardPlugin extends Plugin
 		NameableContainer<Ignore> ignoreContainer = client.getIgnoreContainer();
 		NameableContainer<Friend> friendContainer = client.getFriendContainer();
 		String playerName = Text.removeTags(nameText).trim();
-		String note = null;
-		Integer noteIcon = null;
 
 		// Don't highlight the local player
 		if (playerName.equals(client.getLocalPlayer().getName()))
 		{
 			return;
-		}
-
-		// Fetch friend notes
-		if (friendNotesEnabled)
-		{
-			note = friendNotes.getNote(playerName);
-			noteIcon = friendNotes.getNoteIcon();
-
-			log.debug("Player: {}, Note: {} ({})", playerName, note, noteIcon);
 		}
 
 		// Highlight friend/clan/ignored players
@@ -214,9 +203,15 @@ public class TobNoticeBoardPlugin extends Plugin
 		}
 
 		// Add the note icon after the username (only shown on inside lobby widget)
-		if (party.equals(Party.LOBBY) && !playerName.equals("-") && note != null && noteIcon != null)
+		if (friendNotesEnabled && party.equals(Party.LOBBY) && !playerName.equals("-"))
 		{
-			noticeBoardChild.setText(playerName + " <img=" + noteIcon + ">");
+			final String note = friendNotes.getNote(playerName);
+
+			if (note != null)
+			{
+				log.debug("Player: {}, Note: {}", playerName, note);
+				friendNotes.updateWidget(noticeBoardChild, playerName);
+			}
 		}
 	}
 

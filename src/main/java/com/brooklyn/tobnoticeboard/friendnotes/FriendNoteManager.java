@@ -9,10 +9,9 @@ import javax.annotation.Nullable;
 import javax.inject.Inject;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import net.runelite.api.events.MenuEntryAdded;
-import net.runelite.api.widgets.WidgetUtil;
+import net.runelite.api.widgets.JavaScriptCallback;
+import net.runelite.api.widgets.Widget;
 import net.runelite.client.config.ConfigManager;
-import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.game.ChatIconManager;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginManager;
@@ -58,7 +57,6 @@ public class FriendNoteManager
 
 	public void startUp()
 	{
-		log.debug("FriendNoteManager::startUp");
 		overlayManager.add(overlay);
 		loadIcon();
 	}
@@ -78,17 +76,12 @@ public class FriendNoteManager
 		return configManager.getConfiguration(FRIEND_NOTES_CONFIG_GROUP, FRIEND_NOTES_KEY_PREFIX + sanitizedName);
 	}
 
-	@Subscribe
-	public void onMenuEntryAdded(MenuEntryAdded event)
+	public void updateWidget(Widget widget, String playerName)
 	{
-		final int groupId = WidgetUtil.componentToInterface(event.getActionParam1());
-//		log.debug("onMenuEntryAdded: {} / {}", event.getActionParam1(), groupId);
-
-		// Look for "Message" on friends list
-		if (groupId == TobNoticeBoardPlugin.LOBBY_COMPONENT_ID)
-		{
-			setHoveredFriend(event.getTarget());
-		}
+		widget.setText(playerName + " <img=" + getNoteIcon() + ">");
+		widget.setHasListener(true);
+		widget.setOnMouseOverListener((JavaScriptCallback) ev -> setHoveredFriend(playerName));
+		widget.setOnMouseLeaveListener((JavaScriptCallback) ev -> setHoveredFriend(null));
 	}
 
 	/**
@@ -108,7 +101,7 @@ public class FriendNoteManager
 		}
 	}
 
-	public Integer getNoteIcon()
+	private Integer getNoteIcon()
 	{
 		if (chatIconIndex != -1)
 		{
@@ -124,7 +117,7 @@ public class FriendNoteManager
 		return null;
 	}
 
-	public void loadIcon()
+	private void loadIcon()
 	{
 		if (iconId != -1)
 		{
@@ -143,7 +136,8 @@ public class FriendNoteManager
 
 	public boolean isEnabled()
 	{
-		if (!config.friendNotes()) {
+		if (!config.friendNotes())
+		{
 			return false;
 		}
 
