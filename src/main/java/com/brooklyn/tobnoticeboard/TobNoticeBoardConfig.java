@@ -109,4 +109,15 @@ public interface TobNoticeBoardConfig extends Config
 	{
 		return true;
 	}
+
+	@ConfigItem(
+		keyName = TobNoticeBoardPlugin.CONFIG_KEY_FRIEND_NOTES,
+		name = "Integrate with Friend Notes",
+		description = "Show friend notes on the notice board. Requires the \"Friend Notes\" plugin to be enabled",
+		position = 8
+	)
+	default boolean friendNotes()
+	{
+		return true;
+	}
 }

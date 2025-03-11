@@ -24,6 +24,7 @@
  */
 package com.brooklyn.tobnoticeboard;
 
+import com.brooklyn.tobnoticeboard.friendnotes.FriendNoteManager;
 import com.google.inject.Provides;
 import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
@@ -38,6 +39,7 @@ import net.runelite.api.events.WidgetLoaded;
 import net.runelite.api.widgets.Widget;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
+import net.runelite.client.eventbus.EventBus;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.events.ConfigChanged;
 import net.runelite.client.plugins.Plugin;
@@ -53,9 +55,11 @@ import net.runelite.client.util.Text;
 public class TobNoticeBoardPlugin extends Plugin
 {
 	private static final int DEFAULT_RGB = 0xff981f;
-	private static final int NOTICE_BOARD_COMPONENT_ID = 364;
-	private static final int LOBBY_COMPONENT_ID = 50;
+	public static final int NOTICE_BOARD_COMPONENT_ID = 364;
+	public static final int LOBBY_COMPONENT_ID = 50;
 	public static final String CONFIG_KEY_HIGHLIGHT_LOBBY = "highlightInLobby";
+	public static final String CONFIG_KEY_FRIEND_NOTES = "friendNotes";
+	private boolean friendNotesEnabled = false;
 
 	@Inject
 	private Client client;
@@ -66,16 +70,26 @@ public class TobNoticeBoardPlugin extends Plugin
 	@Inject
 	private ClientThread clientThread;
 
+	@Inject
+	private EventBus eventBus;
+
+	@Inject
+	private FriendNoteManager friendNotes;
+
 	@Override
 	public void startUp()
 	{
 		setNoticeBoard();
+		eventBus.register(friendNotes);
+		friendNotes.startUp();
 	}
 
 	@Override
 	public void shutDown()
 	{
 		unsetNoticeBoard();
+		eventBus.register(friendNotes);
+		friendNotes.shutDown();
 	}
 
 	@Subscribe
@@ -127,7 +141,7 @@ public class TobNoticeBoardPlugin extends Plugin
 				{
 					if (noticeBoardChild.getIndex() == 3)
 					{
-						updatePlayerName(noticeBoardChild, noticeBoard.getName(), friendColor, clanColor, ignoreColor);
+						updatePlayerName(Party.NOTICE_BOARD, noticeBoardChild, noticeBoard.getName(), friendColor, clanColor, ignoreColor);
 					}
 				}
 			}
@@ -149,18 +163,18 @@ public class TobNoticeBoardPlugin extends Plugin
 					// each row is 11 widgets long, the second (idx: 1) widget is the player name
 					if (noticeBoardChild.getIndex() % 11 == 1)
 					{
-						updatePlayerName(noticeBoardChild, noticeBoardChild.getText(), friendColor, clanColor, ignoreColor);
+						updatePlayerName(Party.LOBBY, noticeBoardChild, noticeBoardChild.getText(), friendColor, clanColor, ignoreColor);
 					}
 				}
 			}
 		}
 	}
 
-	private void updatePlayerName(Widget noticeBoardChild, String nameText, int friendColor, int clanColor, int ignoreColor)
+	private void updatePlayerName(Party party, Widget noticeBoardChild, String nameText, int friendColor, int clanColor, int ignoreColor)
 	{
 		NameableContainer<Ignore> ignoreContainer = client.getIgnoreContainer();
 		NameableContainer<Friend> friendContainer = client.getFriendContainer();
-		String playerName = Text.removeTags(nameText);
+		String playerName = Text.removeTags(nameText).trim();
 
 		// Don't highlight the local player
 		if (playerName.equals(client.getLocalPlayer().getName()))
@@ -168,6 +182,7 @@ public class TobNoticeBoardPlugin extends Plugin
 			return;
 		}
 
+		// Highlight friend/clan/ignored players
 		if (ignoreContainer.findByName(playerName) != null)
 		{
 			noticeBoardChild.setTextColor(config.highlightIgnored() ? ignoreColor : DEFAULT_RGB);
@@ -186,6 +201,18 @@ public class TobNoticeBoardPlugin extends Plugin
 				}
 			}
 		}
+
+		// Add the note icon after the username (only shown on inside lobby widget)
+		if (friendNotesEnabled && party.equals(Party.LOBBY) && !playerName.equals("-"))
+		{
+			final String note = friendNotes.getNote(playerName);
+
+			if (note != null)
+			{
+				log.debug("Player: {}, Note: {}", playerName, note);
+				friendNotes.updateWidget(noticeBoardChild, playerName);
+			}
+		}
 	}
 
 	private void setNoticeBoard()
@@ -193,6 +220,7 @@ public class TobNoticeBoardPlugin extends Plugin
 		int friendColor = config.friendColor().getRGB();
 		int clanColor = config.clanColor().getRGB();
 		int ignoreColor = config.ignoredColor().getRGB();
+		friendNotesEnabled = friendNotes.isEnabled();
 
 		setNoticeBoardColors(friendColor, clanColor, ignoreColor);
 
