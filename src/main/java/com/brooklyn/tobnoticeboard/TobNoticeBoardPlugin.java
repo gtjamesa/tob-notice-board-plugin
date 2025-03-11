@@ -48,9 +48,9 @@ import net.runelite.client.util.Text;
 
 @Slf4j
 @PluginDescriptor(
-	name = "ToB Notice Board",
-	description = "Highlight friends and clan members on the Theatre of Blood Notice Board",
-	tags = "theatre, theater, pvm, combat, party, friend, clan, cc, fc, friendschat, clanchat, raids, hub, brooklyn"
+	name = "Raid Notice Board",
+	description = "Highlight friends and clan members on the ToB/ToA Notice Board",
+	tags = "tob, theatre, theater, pvm, combat, party, friend, clan, cc, fc, friendschat, clanchat, raids, hub, brooklyn, gtjamesa, toa"
 )
 public class TobNoticeBoardPlugin extends Plugin
 {
