@@ -88,7 +88,7 @@ public class TobNoticeBoardPlugin extends Plugin
 	public void shutDown()
 	{
 		unsetNoticeBoard();
-		eventBus.register(friendNotes);
+		eventBus.unregister(friendNotes);
 		friendNotes.shutDown();
 	}
 
