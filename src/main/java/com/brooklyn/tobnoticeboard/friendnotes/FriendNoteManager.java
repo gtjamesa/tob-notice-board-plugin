@@ -1,7 +1,7 @@
 package com.brooklyn.tobnoticeboard.friendnotes;
 
-import com.brooklyn.tobnoticeboard.TobNoticeBoardConfig;
-import com.brooklyn.tobnoticeboard.TobNoticeBoardPlugin;
+import com.brooklyn.tobnoticeboard.RaidNoticeBoardConfig;
+import com.brooklyn.tobnoticeboard.RaidNoticeBoardPlugin;
 import com.google.common.base.Strings;
 import java.awt.image.BufferedImage;
 import java.util.Optional;
@@ -35,7 +35,7 @@ public class FriendNoteManager
 	private int chatIconIndex = -1;
 
 	@Inject
-	private TobNoticeBoardConfig config;
+	private RaidNoticeBoardConfig config;
 
 	@Inject
 	private ConfigManager configManager;
@@ -124,7 +124,7 @@ public class FriendNoteManager
 			return;
 		}
 
-		final BufferedImage iconImg = ImageUtil.loadImageResource(TobNoticeBoardPlugin.class, "/note_icon.png");
+		final BufferedImage iconImg = ImageUtil.loadImageResource(RaidNoticeBoardPlugin.class, "/note_icon.png");
 		if (iconImg == null)
 		{
 			throw new RuntimeException("unable to load icon");

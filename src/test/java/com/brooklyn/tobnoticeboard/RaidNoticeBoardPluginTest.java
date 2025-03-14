@@ -3,11 +3,11 @@ package com.brooklyn.tobnoticeboard;
 import net.runelite.client.RuneLite;
 import net.runelite.client.externalplugins.ExternalPluginManager;
 
-public class TobNoticeBoardPluginTest
+public class RaidNoticeBoardPluginTest
 {
 	public static void main(String[] args) throws Exception
 	{
-		ExternalPluginManager.loadBuiltin(TobNoticeBoardPlugin.class);
+		ExternalPluginManager.loadBuiltin(RaidNoticeBoardPlugin.class);
 		RuneLite.main(args);
 	}
 }

@@ -31,7 +31,7 @@ import net.runelite.client.config.ConfigItem;
 import java.awt.*;
 
 @ConfigGroup("tobnoticeboard")
-public interface TobNoticeBoardConfig extends Config
+public interface RaidNoticeBoardConfig extends Config
 {
 	@ConfigItem(
 		keyName = "highlightFriends",
@@ -100,7 +100,7 @@ public interface TobNoticeBoardConfig extends Config
 	}
 
 	@ConfigItem(
-		keyName = TobNoticeBoardPlugin.CONFIG_KEY_HIGHLIGHT_LOBBY,
+		keyName = RaidNoticeBoardPlugin.CONFIG_KEY_HIGHLIGHT_LOBBY,
 		name = "Highlight in Lobby",
 		description = "Whether or not to highlight names in a lobby",
 		position = 7
@@ -111,7 +111,7 @@ public interface TobNoticeBoardConfig extends Config
 	}
 
 	@ConfigItem(
-		keyName = TobNoticeBoardPlugin.CONFIG_KEY_FRIEND_NOTES,
+		keyName = RaidNoticeBoardPlugin.CONFIG_KEY_FRIEND_NOTES,
 		name = "Integrate with Friend Notes",
 		description = "Show friend notes on the notice board. Requires the \"Friend Notes\" plugin to be enabled",
 		position = 8

@@ -25,7 +25,11 @@
 package com.brooklyn.tobnoticeboard;
 
 import com.brooklyn.tobnoticeboard.friendnotes.FriendNoteManager;
+import com.brooklyn.tobnoticeboard.raids.NoticeBoard;
+import com.brooklyn.tobnoticeboard.raids.ToaNoticeBoard;
+import com.brooklyn.tobnoticeboard.raids.TobNoticeBoard;
 import com.google.inject.Provides;
+import java.util.List;
 import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
@@ -52,20 +56,24 @@ import net.runelite.client.util.Text;
 	description = "Highlight friends and clan members on the ToB/ToA Notice Board",
 	tags = "tob, theatre, theater, pvm, combat, party, friend, clan, cc, fc, friendschat, clanchat, raids, hub, brooklyn, gtjamesa, toa"
 )
-public class TobNoticeBoardPlugin extends Plugin
+public class RaidNoticeBoardPlugin extends Plugin
 {
 	private static final int DEFAULT_RGB = 0xff981f;
-	public static final int NOTICE_BOARD_COMPONENT_ID = 364;
-	public static final int LOBBY_COMPONENT_ID = 50;
+	public static final String CONFIG_GROUP = "tobnoticeboard";
 	public static final String CONFIG_KEY_HIGHLIGHT_LOBBY = "highlightInLobby";
 	public static final String CONFIG_KEY_FRIEND_NOTES = "friendNotes";
 	private boolean friendNotesEnabled = false;
+
+	public static final List<Integer> LOBBY_COMPONENTS = List.of(
+		TobNoticeBoard.TOB_NOTICE_BOARD_COMPONENT_ID, TobNoticeBoard.TOB_LOBBY_COMPONENT_ID,
+		ToaNoticeBoard.TOA_NOTICE_BOARD_COMPONENT_ID, ToaNoticeBoard.TOA_LOBBY_COMPONENT_ID
+	);
 
 	@Inject
 	private Client client;
 
 	@Inject
-	private TobNoticeBoardConfig config;
+	private RaidNoticeBoardConfig config;
 
 	@Inject
 	private ClientThread clientThread;
@@ -76,10 +84,19 @@ public class TobNoticeBoardPlugin extends Plugin
 	@Inject
 	private FriendNoteManager friendNotes;
 
+	@Inject
+	private TobNoticeBoard tobNoticeBoard;
+
+	@Inject
+	private ToaNoticeBoard toaNoticeBoard;
+
+	private NoticeBoard noticeBoard;
+	private int lastWidgetId = -1;
+
 	@Override
 	public void startUp()
 	{
-		setNoticeBoard();
+		addHighlighting();
 		eventBus.register(friendNotes);
 		friendNotes.startUp();
 	}
@@ -87,7 +104,7 @@ public class TobNoticeBoardPlugin extends Plugin
 	@Override
 	public void shutDown()
 	{
-		unsetNoticeBoard();
+		removeHighlighting();
 		eventBus.register(friendNotes);
 		friendNotes.shutDown();
 	}
@@ -95,7 +112,7 @@ public class TobNoticeBoardPlugin extends Plugin
 	@Subscribe
 	public void onConfigChanged(ConfigChanged event)
 	{
-		if (event.getGroup().equals("tobnoticeboard"))
+		if (event.getGroup().equals(CONFIG_GROUP))
 		{
 			// Lobby highlighting has been disabled, reset the colors
 			if (event.getKey().equals(CONFIG_KEY_HIGHLIGHT_LOBBY) && !config.highlightInLobby())
@@ -104,7 +121,7 @@ public class TobNoticeBoardPlugin extends Plugin
 				return;
 			}
 
-			setNoticeBoard();
+			addHighlighting();
 		}
 	}
 
@@ -113,9 +130,13 @@ public class TobNoticeBoardPlugin extends Plugin
 	{
 		clientThread.invokeLater(() ->
 		{
-			if (widgetLoaded.getGroupId() == NOTICE_BOARD_COMPONENT_ID || widgetLoaded.getGroupId() == LOBBY_COMPONENT_ID)
+			final int groupId = widgetLoaded.getGroupId();
+
+			if (LOBBY_COMPONENTS.contains(groupId))
 			{
-				setNoticeBoard();
+				lastWidgetId = groupId;
+				noticeBoard = getNoticeBoard(groupId);
+				addHighlighting();
 			}
 		});
 	}
@@ -125,56 +146,56 @@ public class TobNoticeBoardPlugin extends Plugin
 	{
 		if (event.getScriptId() == ScriptID.FRIENDS_UPDATE || event.getScriptId() == ScriptID.IGNORE_UPDATE)
 		{
-			setNoticeBoard();
+			addHighlighting();
 		}
 	}
 
+	/**
+	 * Initialise the correct notice board based on the group ID
+	 */
+	private NoticeBoard getNoticeBoard(int groupId)
+	{
+		switch (groupId)
+		{
+			case TobNoticeBoard.TOB_NOTICE_BOARD_COMPONENT_ID:
+			case TobNoticeBoard.TOB_LOBBY_COMPONENT_ID:
+				return tobNoticeBoard;
+			case ToaNoticeBoard.TOA_NOTICE_BOARD_COMPONENT_ID:
+			case ToaNoticeBoard.TOA_LOBBY_COMPONENT_ID:
+				return toaNoticeBoard;
+			default:
+				return null;
+		}
+	}
+
+	/**
+	 * Set colors on the main notice board (party listing)
+	 */
 	private void setNoticeBoardColors(int friendColor, int clanColor, int ignoreColor)
 	{
-		for (int childID = 17; childID < 62; ++childID)
+		if (noticeBoard != null)
 		{
-			Widget noticeBoard = client.getWidget(NOTICE_BOARD_COMPONENT_ID, childID);
-
-			if (noticeBoard != null && noticeBoard.getName() != null && noticeBoard.getChildren() != null)
-			{
-				for (Widget noticeBoardChild : noticeBoard.getChildren())
-				{
-					if (noticeBoardChild.getIndex() == 3)
-					{
-						updatePlayerName(Party.NOTICE_BOARD, noticeBoardChild, noticeBoard.getName(), friendColor, clanColor, ignoreColor);
-					}
-				}
-			}
+			noticeBoard.setNoticeBoardColors(friendColor, clanColor, ignoreColor, this::updatePlayerName);
 		}
 	}
 
+	/**
+	 * Set colors in the lobby (inside a party)
+	 */
 	private void setLobbyColors(int friendColor, int clanColor, int ignoreColor)
 	{
-		int[] children = {27, 42}; // 0 - lobby, 1 - lobby applicants
-
-		for (int childID : children)
+		if (noticeBoard != null)
 		{
-			Widget noticeBoard = client.getWidget(LOBBY_COMPONENT_ID, childID);
-
-			if (noticeBoard != null && noticeBoard.getName() != null && noticeBoard.getChildren() != null)
-			{
-				for (Widget noticeBoardChild : noticeBoard.getChildren())
-				{
-					// each row is 11 widgets long, the second (idx: 1) widget is the player name
-					if (noticeBoardChild.getIndex() % 11 == 1)
-					{
-						updatePlayerName(Party.LOBBY, noticeBoardChild, noticeBoardChild.getText(), friendColor, clanColor, ignoreColor);
-					}
-				}
-			}
+			noticeBoard.setLobbyColors(friendColor, clanColor, ignoreColor, this::updatePlayerName);
 		}
 	}
 
-	private void updatePlayerName(Party party, Widget noticeBoardChild, String nameText, int friendColor, int clanColor, int ignoreColor)
+	private void updatePlayerName(Party party, Widget widget, String nameText, int friendColor, int clanColor, int ignoreColor)
 	{
 		NameableContainer<Ignore> ignoreContainer = client.getIgnoreContainer();
 		NameableContainer<Friend> friendContainer = client.getFriendContainer();
 		String playerName = Text.removeTags(nameText).trim();
+		final boolean isLobby = party.equals(Party.TOB_LOBBY) || party.equals(Party.TOA_LOBBY);
 
 		// Don't highlight the local player
 		if (playerName.equals(client.getLocalPlayer().getName()))
@@ -185,11 +206,11 @@ public class TobNoticeBoardPlugin extends Plugin
 		// Highlight friend/clan/ignored players
 		if (ignoreContainer.findByName(playerName) != null)
 		{
-			noticeBoardChild.setTextColor(config.highlightIgnored() ? ignoreColor : DEFAULT_RGB);
+			widget.setTextColor(config.highlightIgnored() ? ignoreColor : DEFAULT_RGB);
 		}
 		else if (friendContainer.findByName(playerName) != null)
 		{
-			noticeBoardChild.setTextColor(config.highlightFriends() ? friendColor : DEFAULT_RGB);
+			widget.setTextColor(config.highlightFriends() ? friendColor : DEFAULT_RGB);
 		}
 		else if (client.getFriendsChatManager() != null)
 		{
@@ -197,25 +218,25 @@ public class TobNoticeBoardPlugin extends Plugin
 			{
 				if (Text.toJagexName(member.getName()).equals(playerName))
 				{
-					noticeBoardChild.setTextColor(config.highlightClan() ? clanColor : DEFAULT_RGB);
+					widget.setTextColor(config.highlightClan() ? clanColor : DEFAULT_RGB);
 				}
 			}
 		}
 
 		// Add the note icon after the username (only shown on inside lobby widget)
-		if (friendNotesEnabled && party.equals(Party.LOBBY) && !playerName.equals("-"))
+		if (friendNotesEnabled && isLobby && !playerName.equals("-"))
 		{
 			final String note = friendNotes.getNote(playerName);
 
 			if (note != null)
 			{
 				log.debug("Player: {}, Note: {}", playerName, note);
-				friendNotes.updateWidget(noticeBoardChild, playerName);
+				friendNotes.updateWidget(widget, playerName);
 			}
 		}
 	}
 
-	private void setNoticeBoard()
+	private void addHighlighting()
 	{
 		int friendColor = config.friendColor().getRGB();
 		int clanColor = config.clanColor().getRGB();
@@ -230,15 +251,15 @@ public class TobNoticeBoardPlugin extends Plugin
 		}
 	}
 
-	private void unsetNoticeBoard()
+	private void removeHighlighting()
 	{
 		setNoticeBoardColors(DEFAULT_RGB, DEFAULT_RGB, DEFAULT_RGB);
 		setLobbyColors(DEFAULT_RGB, DEFAULT_RGB, DEFAULT_RGB);
 	}
 
 	@Provides
-	TobNoticeBoardConfig provideConfig(ConfigManager configManager)
+	RaidNoticeBoardConfig provideConfig(ConfigManager configManager)
 	{
-		return configManager.getConfig(TobNoticeBoardConfig.class);
+		return configManager.getConfig(RaidNoticeBoardConfig.class);
 	}
 }

@@ -2,6 +2,8 @@ package com.brooklyn.tobnoticeboard;
 
 public enum Party
 {
-	NOTICE_BOARD,
-	LOBBY,
+	TOB_NOTICE_BOARD,
+	TOB_LOBBY,
+	TOA_NOTICE_BOARD,
+	TOA_LOBBY,
 }
