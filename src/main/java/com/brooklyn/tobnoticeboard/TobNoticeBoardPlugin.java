@@ -175,6 +175,7 @@ public class TobNoticeBoardPlugin extends Plugin
 		NameableContainer<Ignore> ignoreContainer = client.getIgnoreContainer();
 		NameableContainer<Friend> friendContainer = client.getFriendContainer();
 		String playerName = Text.removeTags(nameText).trim();
+		String playerNameLower = playerName.toLowerCase();
 
 		// Don't highlight the local player
 		if (playerName.equals(client.getLocalPlayer().getName()))
@@ -183,11 +184,11 @@ public class TobNoticeBoardPlugin extends Plugin
 		}
 
 		// Highlight friend/clan/ignored players
-		if (ignoreContainer.findByName(playerName) != null)
+		if (ignoreContainer.findByName(playerNameLower) != null)
 		{
 			noticeBoardChild.setTextColor(config.highlightIgnored() ? ignoreColor : DEFAULT_RGB);
 		}
-		else if (friendContainer.findByName(playerName) != null)
+		else if (friendContainer.findByName(playerNameLower) != null)
 		{
 			noticeBoardChild.setTextColor(config.highlightFriends() ? friendColor : DEFAULT_RGB);
 		}
@@ -195,7 +196,7 @@ public class TobNoticeBoardPlugin extends Plugin
 		{
 			for (FriendsChatMember member : client.getFriendsChatManager().getMembers())
 			{
-				if (Text.toJagexName(member.getName()).equals(playerName))
+				if (Text.toJagexName(member.getName()).equals(playerNameLower))
 				{
 					noticeBoardChild.setTextColor(config.highlightClan() ? clanColor : DEFAULT_RGB);
 				}
