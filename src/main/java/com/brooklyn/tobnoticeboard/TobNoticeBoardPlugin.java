@@ -25,8 +25,10 @@
 package com.brooklyn.tobnoticeboard;
 
 import com.brooklyn.tobnoticeboard.friendnotes.FriendNoteManager;
+import com.brooklyn.tobnoticeboard.orborder.OrbOrderManager;
 import com.google.inject.Provides;
 import javax.inject.Inject;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
 import net.runelite.api.Friend;
@@ -35,7 +37,9 @@ import net.runelite.api.Ignore;
 import net.runelite.api.NameableContainer;
 import net.runelite.api.ScriptID;
 import net.runelite.api.events.ScriptPostFired;
+import net.runelite.api.events.VarbitChanged;
 import net.runelite.api.events.WidgetLoaded;
+import net.runelite.api.gameval.VarbitID;
 import net.runelite.api.widgets.Widget;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
@@ -55,8 +59,6 @@ import net.runelite.client.util.Text;
 public class TobNoticeBoardPlugin extends Plugin
 {
 	private static final int DEFAULT_RGB = 0xff981f;
-	public static final int NOTICE_BOARD_COMPONENT_ID = 364;
-	public static final int LOBBY_COMPONENT_ID = 50;
 	public static final String CONFIG_KEY_HIGHLIGHT_LOBBY = "highlightInLobby";
 	public static final String CONFIG_KEY_FRIEND_NOTES = "friendNotes";
 	private boolean friendNotesEnabled = false;
@@ -76,11 +78,21 @@ public class TobNoticeBoardPlugin extends Plugin
 	@Inject
 	private FriendNoteManager friendNotes;
 
+	@Inject
+	private OrbOrderManager orbOrder;
+
+	@Getter
+	private boolean inTob;
+
+	@Getter
+	private RaidStatus raidStatus = RaidStatus.NOT_IN_PARTY;
+
 	@Override
 	public void startUp()
 	{
 		setNoticeBoard();
 		eventBus.register(friendNotes);
+		eventBus.register(orbOrder);
 		friendNotes.startUp();
 	}
 
@@ -89,6 +101,7 @@ public class TobNoticeBoardPlugin extends Plugin
 	{
 		unsetNoticeBoard();
 		eventBus.unregister(friendNotes);
+		eventBus.unregister(orbOrder);
 		friendNotes.shutDown();
 	}
 
@@ -113,7 +126,7 @@ public class TobNoticeBoardPlugin extends Plugin
 	{
 		clientThread.invokeLater(() ->
 		{
-			if (widgetLoaded.getGroupId() == NOTICE_BOARD_COMPONENT_ID || widgetLoaded.getGroupId() == LOBBY_COMPONENT_ID)
+			if (widgetLoaded.getGroupId() == Constant.NOTICE_BOARD_COMPONENT_ID || widgetLoaded.getGroupId() == Constant.LOBBY_COMPONENT_ID)
 			{
 				setNoticeBoard();
 			}
@@ -129,11 +142,34 @@ public class TobNoticeBoardPlugin extends Plugin
 		}
 	}
 
+	@Subscribe
+	public void onVarbitChanged(VarbitChanged event)
+	{
+		if (event.getVarbitId() != VarbitID.TOB_CLIENT_PARTYSTATUS)
+		{
+			return;
+		}
+
+		int val = client.getVarbitValue(VarbitID.TOB_CLIENT_PARTYSTATUS);
+		raidStatus = RaidStatus.fromInt(val);
+
+//		if (inTob && raidStatus == RaidStatus.IN_PARTY) // wiped
+//		{
+//
+//		}
+//		else if (raidStatus == RaidStatus.NOT_IN_PARTY) // left party
+//		{
+//			orbOrder.reset();
+//		}
+
+		inTob = val > 1;
+	}
+
 	private void setNoticeBoardColors(int friendColor, int clanColor, int ignoreColor)
 	{
 		for (int childID = 17; childID < 62; ++childID)
 		{
-			Widget noticeBoard = client.getWidget(NOTICE_BOARD_COMPONENT_ID, childID);
+			Widget noticeBoard = client.getWidget(Constant.NOTICE_BOARD_COMPONENT_ID, childID);
 
 			if (noticeBoard != null && noticeBoard.getName() != null && noticeBoard.getChildren() != null)
 			{
@@ -154,7 +190,7 @@ public class TobNoticeBoardPlugin extends Plugin
 
 		for (int childID : children)
 		{
-			Widget noticeBoard = client.getWidget(LOBBY_COMPONENT_ID, childID);
+			Widget noticeBoard = client.getWidget(Constant.LOBBY_COMPONENT_ID, childID);
 
 			if (noticeBoard != null && noticeBoard.getName() != null && noticeBoard.getChildren() != null)
 			{
