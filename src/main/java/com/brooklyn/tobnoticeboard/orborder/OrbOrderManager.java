@@ -1,10 +1,15 @@
 package com.brooklyn.tobnoticeboard.orborder;
 
 import com.brooklyn.tobnoticeboard.Constant;
+import com.brooklyn.tobnoticeboard.RaidStatus;
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Strings;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 import javax.inject.Inject;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -12,6 +17,9 @@ import net.runelite.api.ChatMessageType;
 import net.runelite.api.Client;
 import net.runelite.api.events.ChatMessage;
 import net.runelite.api.events.ScriptPostFired;
+import net.runelite.api.events.VarbitChanged;
+import net.runelite.api.gameval.VarbitID;
+import net.runelite.api.widgets.Widget;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.util.Text;
@@ -20,13 +28,6 @@ import net.runelite.client.util.Text;
 public class OrbOrderManager
 {
 	public static final String MESSAGE_RAID_ENTERED = "You enter the Theatre of Blood";
-
-	/**
-	 * VarClientStrs IDs for the player names on the orb order interface.
-	 *
-	 * @see <a href="https://github.com/Trevor159/runelite-external-plugins/blob/b9d58dd864ce33a23b34eac91865bdb1521a379a/src/main/java/trevor/tobhealthbars/TobHealthBarsPlugin.java#L63-L67">tobhealthbars plugin</a>
-	 */
-	private final int[] playerNameVarc = {330, 331, 332, 333, 334};
 
 	private HashMap<String, TobPlayer> playerMap = new HashMap<>();
 	private String[] currentParty;
@@ -40,6 +41,12 @@ public class OrbOrderManager
 
 	@Getter
 	private OrbStatus orbStatus = OrbStatus.OK;
+
+	@Getter
+	private boolean inTob;
+
+	@Getter
+	private RaidStatus raidStatus = RaidStatus.NOT_IN_PARTY;
 
 	@Inject
 	private Client client;
@@ -67,10 +74,23 @@ public class OrbOrderManager
 	@Subscribe
 	public void onScriptPostFired(ScriptPostFired event)
 	{
-		if (event.getScriptId() == Constant.SCRIPT_ID_TOB_HUD_DRAW)
+		if (event.getScriptId() == Constant.SCRIPT_ID_TOB_HUD_DRAW && raidStatus.equals(RaidStatus.IN_PARTY))
 		{
 			clientThread.invokeLater(this::createPlayers);
 		}
+	}
+
+	@Subscribe
+	public void onVarbitChanged(VarbitChanged event)
+	{
+		if (event.getVarbitId() != VarbitID.TOB_CLIENT_PARTYSTATUS)
+		{
+			return;
+		}
+
+		int val = client.getVarbitValue(VarbitID.TOB_CLIENT_PARTYSTATUS);
+		raidStatus = RaidStatus.fromInt(val);
+		inTob = val > 1;
 	}
 
 	protected void startRaid()
@@ -85,13 +105,13 @@ public class OrbOrderManager
 	 */
 	protected void createPlayers()
 	{
-		currentParty = new String[5];
+		currentParty = new String[Constant.TOB_MAX_PARTY_SIZE];
 		playerCount = 0;
-		String[] playerNames = fetchPlayerNames();
+		List<String> playerNames = fetchPlayerNames();
 
-		for (int i = 0; i < playerNames.length; i++)
+		for (int i = 0; i < playerNames.size(); i++)
 		{
-			String playerName = playerNames[i];
+			String playerName = playerNames.get(i);
 			currentParty[i] = playerName;
 			playerMap.put(playerName, new TobPlayer(playerName, i));
 			playerCount++;
@@ -169,22 +189,36 @@ public class OrbOrderManager
 	}
 
 	/**
-	 * Fetch player names from the client varc strings or the party panel
+	 * Fetch player names from the top-left party panel
 	 *
-	 * @return array of player names
+	 * @return list of player names
 	 */
 	@VisibleForTesting
-	String[] fetchPlayerNames()
+	List<String> fetchPlayerNames()
 	{
-		return Arrays.stream(playerNameVarc)
-			.mapToObj(client::getVarcStrValue)
-			.filter(name -> name != null && !name.isEmpty())
-			.toArray(String[]::new);
+		List<String> names = new ArrayList<>();
+		Widget hud = client.getWidget(Constant.TOB_HUD_COMPONENT_ID, Constant.TOB_HUD_CHILD_COMPONENT_ID);
+
+		if (hud == null)
+		{
+			return names;
+		}
+
+		String text = hud.getText();
+		if (Strings.isNullOrEmpty(text))
+		{
+			return names;
+		}
+
+		return Arrays.stream(text.split("<br>")) // user1<br>user2<br>-<br>-<br>-
+			.filter(name -> !name.equals("-") && !Strings.isNullOrEmpty(name))
+			.map(name -> Text.removeTags(name).trim())
+			.collect(Collectors.toList());
 	}
 
 	private int fetchPlayerCount()
 	{
-		return fetchPlayerNames().length;
+		return fetchPlayerNames().size();
 	}
 
 	/**

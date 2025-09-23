@@ -1,11 +1,13 @@
 package com.brooklyn.tobnoticeboard.orborder;
 
-import com.brooklyn.tobnoticeboard.TobNoticeBoardPlugin;
+import com.brooklyn.tobnoticeboard.Constant;
 import com.google.inject.Guice;
 import com.google.inject.Inject;
 import com.google.inject.testing.fieldbinder.Bind;
 import com.google.inject.testing.fieldbinder.BoundFieldModule;
+import java.util.List;
 import net.runelite.api.Client;
+import net.runelite.api.widgets.Widget;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -13,7 +15,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import org.mockito.junit.MockitoJUnitRunner;
 
@@ -35,23 +37,23 @@ public class OrbOrderManagerTest
 
 	private void setupTrio()
 	{
-		when(client.getVarcStrValue(330)).thenReturn("Lynx Titan");
-		when(client.getVarcStrValue(331)).thenReturn("Hey Jase");
-		when(client.getVarcStrValue(332)).thenReturn("ShawnBay");
+		Widget widget = mock(Widget.class);
+		when(widget.getText()).thenReturn("Lynx Titan<br>Hey Jase<br>ShawnBay<br>-<br>-");
+		when(client.getWidget(Constant.TOB_HUD_COMPONENT_ID, Constant.TOB_HUD_CHILD_COMPONENT_ID)).thenReturn(widget);
 	}
 
 	@Test
 	public void shouldFetchPlayerNames()
 	{
-		when(client.getVarcStrValue(330)).thenReturn("Lynx Titan");
-		when(client.getVarcStrValue(331)).thenReturn("Hey Jase");
-		when(client.getVarcStrValue(332)).thenReturn("ShawnBay");
+		Widget widget = mock(Widget.class);
+		when(widget.getText()).thenReturn("Lynx Titan<br>Hey Jase<br>ShawnBay<br>-<br>-");
+		when(client.getWidget(Constant.TOB_HUD_COMPONENT_ID, Constant.TOB_HUD_CHILD_COMPONENT_ID)).thenReturn(widget);
 
-		String[] playerNames = orbOrderManager.fetchPlayerNames();
-		assertEquals(3, playerNames.length);
-		assertEquals("Lynx Titan", playerNames[0]);
-		assertEquals("Hey Jase", playerNames[1]);
-		assertEquals("ShawnBay", playerNames[2]);
+		List<String> playerNames = orbOrderManager.fetchPlayerNames();
+		assertEquals(3, playerNames.size());
+		assertEquals("Lynx Titan", playerNames.get(0));
+		assertEquals("Hey Jase", playerNames.get(1));
+		assertEquals("ShawnBay", playerNames.get(2));
 	}
 
 	@Test
@@ -87,8 +89,9 @@ public class OrbOrderManagerTest
 
 		orbOrderManager.startRaid();
 
-		when(client.getVarcStrValue(331)).thenReturn("ShawnBay");
-		when(client.getVarcStrValue(332)).thenReturn("Hey Jase");
+		Widget widget = mock(Widget.class);
+		when(widget.getText()).thenReturn("Lynx Titan<br>ShawnBay<br>Hey Jase<br>-<br>-");
+		when(client.getWidget(Constant.TOB_HUD_COMPONENT_ID, Constant.TOB_HUD_CHILD_COMPONENT_ID)).thenReturn(widget);
 
 		orbOrderManager.createPlayers();
 
@@ -102,11 +105,9 @@ public class OrbOrderManagerTest
 
 		orbOrderManager.startRaid();
 
-		when(client.getVarcStrValue(330)).thenReturn("Lynx Titan");
-		when(client.getVarcStrValue(331)).thenReturn("Hey Jase");
-		when(client.getVarcStrValue(332)).thenReturn("ShawnBay");
-		when(client.getVarcStrValue(333)).thenReturn("senZe");
-		when(client.getVarcStrValue(334)).thenReturn("Karma");
+		Widget widget = mock(Widget.class);
+		when(widget.getText()).thenReturn("Lynx Titan<br>Hey Jase<br>ShawnBay<br>senZe<br>Karma");
+		when(client.getWidget(Constant.TOB_HUD_COMPONENT_ID, Constant.TOB_HUD_CHILD_COMPONENT_ID)).thenReturn(widget);
 
 		orbOrderManager.createPlayers();
 
@@ -116,18 +117,16 @@ public class OrbOrderManagerTest
 	@Test
 	public void shouldBeOkWhenPlayersLeave()
 	{
-		when(client.getVarcStrValue(330)).thenReturn("Lynx Titan");
-		when(client.getVarcStrValue(331)).thenReturn("Hey Jase");
-		when(client.getVarcStrValue(332)).thenReturn("ShawnBay");
-		when(client.getVarcStrValue(333)).thenReturn("senZe");
-		when(client.getVarcStrValue(334)).thenReturn("Karma");
+		Widget widget = mock(Widget.class);
+		when(widget.getText()).thenReturn("Lynx Titan<br>Hey Jase<br>ShawnBay<br>senZe<br>Karma");
+		when(client.getWidget(Constant.TOB_HUD_COMPONENT_ID, Constant.TOB_HUD_CHILD_COMPONENT_ID)).thenReturn(widget);
 
 		orbOrderManager.startRaid();
 
 		// orbs have swapped here, but players have left so we'll recruit or fix the order when player count matches
-		setupTrio();
-		lenient().when(client.getVarcStrValue(333)).thenReturn(null);
-		lenient().when(client.getVarcStrValue(334)).thenReturn(null);
+		Widget widget2 = mock(Widget.class);
+		when(widget2.getText()).thenReturn("Lynx Titan<br>ShawnBay<br>Hey Jase<br>-<br>-");
+		when(client.getWidget(Constant.TOB_HUD_COMPONENT_ID, Constant.TOB_HUD_CHILD_COMPONENT_ID)).thenReturn(widget2);
 
 		orbOrderManager.createPlayers();
 
@@ -141,9 +140,10 @@ public class OrbOrderManagerTest
 
 		orbOrderManager.startRaid();
 
-		when(client.getVarcStrValue(330)).thenReturn("Lynx Titan");
-		when(client.getVarcStrValue(331)).thenReturn("Hey Jase");
-		when(client.getVarcStrValue(332)).thenReturn("senZe"); // new mdps has replaced shawnbay
+		// new mdps has replaced shawnbay
+		Widget widget = mock(Widget.class);
+		when(widget.getText()).thenReturn("Lynx Titan<br>Hey Jase<br>senZe<br>-<br>-");
+		when(client.getWidget(Constant.TOB_HUD_COMPONENT_ID, Constant.TOB_HUD_CHILD_COMPONENT_ID)).thenReturn(widget);
 
 		orbOrderManager.startRaid();
 

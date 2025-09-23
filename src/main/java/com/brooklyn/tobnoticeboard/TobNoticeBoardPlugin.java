@@ -28,7 +28,6 @@ import com.brooklyn.tobnoticeboard.friendnotes.FriendNoteManager;
 import com.brooklyn.tobnoticeboard.orborder.OrbOrderManager;
 import com.google.inject.Provides;
 import javax.inject.Inject;
-import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
 import net.runelite.api.Friend;
@@ -37,9 +36,7 @@ import net.runelite.api.Ignore;
 import net.runelite.api.NameableContainer;
 import net.runelite.api.ScriptID;
 import net.runelite.api.events.ScriptPostFired;
-import net.runelite.api.events.VarbitChanged;
 import net.runelite.api.events.WidgetLoaded;
-import net.runelite.api.gameval.VarbitID;
 import net.runelite.api.widgets.Widget;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
@@ -80,12 +77,6 @@ public class TobNoticeBoardPlugin extends Plugin
 
 	@Inject
 	private OrbOrderManager orbOrder;
-
-	@Getter
-	private boolean inTob;
-
-	@Getter
-	private RaidStatus raidStatus = RaidStatus.NOT_IN_PARTY;
 
 	@Override
 	public void startUp()
@@ -140,29 +131,6 @@ public class TobNoticeBoardPlugin extends Plugin
 		{
 			setNoticeBoard();
 		}
-	}
-
-	@Subscribe
-	public void onVarbitChanged(VarbitChanged event)
-	{
-		if (event.getVarbitId() != VarbitID.TOB_CLIENT_PARTYSTATUS)
-		{
-			return;
-		}
-
-		int val = client.getVarbitValue(VarbitID.TOB_CLIENT_PARTYSTATUS);
-		raidStatus = RaidStatus.fromInt(val);
-
-//		if (inTob && raidStatus == RaidStatus.IN_PARTY) // wiped
-//		{
-//
-//		}
-//		else if (raidStatus == RaidStatus.NOT_IN_PARTY) // left party
-//		{
-//			orbOrder.reset();
-//		}
-
-		inTob = val > 1;
 	}
 
 	private void setNoticeBoardColors(int friendColor, int clanColor, int ignoreColor)
