@@ -3,12 +3,13 @@ package com.brooklyn.tobnoticeboard.orborder;
 import com.brooklyn.tobnoticeboard.Constant;
 import com.google.common.annotations.VisibleForTesting;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Objects;
 import javax.inject.Inject;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.ChatMessageType;
 import net.runelite.api.Client;
-import net.runelite.api.ScriptID;
 import net.runelite.api.events.ChatMessage;
 import net.runelite.api.events.ScriptPostFired;
 import net.runelite.client.callback.ClientThread;
@@ -27,14 +28,15 @@ public class OrbOrderManager
 	 */
 	private final int[] playerNameVarc = {330, 331, 332, 333, 334};
 
-	private TobPlayer[] players;
+	private HashMap<String, TobPlayer> playerMap = new HashMap<>();
+	private String[] currentParty;
 	private int playerCount = 0;
 
 	@Getter
-	private int lastPlayerCount = 0;
+	private String[] lastParty;
 
 	@Getter
-	private TobPlayer[] lastRaidPlayers;
+	private int lastPlayerCount = 0;
 
 	@Getter
 	private OrbStatus orbStatus = OrbStatus.OK;
@@ -65,14 +67,9 @@ public class OrbOrderManager
 	@Subscribe
 	public void onScriptPostFired(ScriptPostFired event)
 	{
-		switch (event.getScriptId())
+		if (event.getScriptId() == Constant.SCRIPT_ID_TOB_HUD_DRAW)
 		{
-			case Constant.SCRIPT_ID_TOB_HUD_DRAW:
-			case Constant.SCRIPT_ID_TOB_PARTY_DETAILS_SORT:
-			case Constant.SCRIPT_ID_TOB_PARTY_LIST_SET_SORT:
-				log.debug("ScriptPostFired: {}", event.getScriptId());
-				clientThread.invokeLater(this::createPlayers);
-				break;
+			clientThread.invokeLater(this::createPlayers);
 		}
 	}
 
@@ -88,13 +85,15 @@ public class OrbOrderManager
 	 */
 	protected void createPlayers()
 	{
-		players = new TobPlayer[5];
+		currentParty = new String[5];
 		playerCount = 0;
 		String[] playerNames = fetchPlayerNames();
 
 		for (int i = 0; i < playerNames.length; i++)
 		{
-			players[i] = new TobPlayer(playerNames[i], i);
+			String playerName = playerNames[i];
+			currentParty[i] = playerName;
+			playerMap.put(playerName, new TobPlayer(playerName, i));
 			playerCount++;
 		}
 
@@ -108,18 +107,30 @@ public class OrbOrderManager
 	 */
 	protected void save()
 	{
-		if (players != null && playerCount > 0)
+		if (currentParty == null || playerCount == 0)
 		{
-			lastRaidPlayers = Arrays.copyOf(players, players.length);
-			lastPlayerCount = playerCount;
+			return;
 		}
+
+		lastParty = Arrays.copyOf(currentParty, currentParty.length);
+		lastPlayerCount = playerCount;
+
+		// Prune `playerMap` to ensure only contains players in the current party
+		playerMap = Arrays.stream(currentParty)
+			.map(name -> playerMap.get(name))
+			.filter(Objects::nonNull)
+			.collect(
+				HashMap::new,
+				(m, p) -> m.put(p.getName(), p),
+				HashMap::putAll
+			);
 	}
 
 	protected void reset()
 	{
-		players = null;
+		currentParty = null;
 		playerCount = 0;
-		lastRaidPlayers = null;
+		lastParty = null;
 		lastPlayerCount = 0;
 		orbStatus = OrbStatus.OK;
 	}
@@ -135,20 +146,26 @@ public class OrbOrderManager
 			return OrbStatus.OK;
 		}
 
-		for (int i = 0; i < players.length; i++)
+		for (int i = 0; i < currentParty.length; i++)
 		{
-			if (players[i] == null || lastRaidPlayers == null || lastRaidPlayers[i] == null)
+			if (currentParty[i] == null || lastParty == null || lastParty[i] == null)
 			{
 				continue;
 			}
 
-			if (!players[i].getName().equals(lastRaidPlayers[i].getName()))
+			if (!currentParty[i].equals(lastParty[i]))
 			{
 				return OrbStatus.INCORRECT;
 			}
 		}
 
 		return OrbStatus.OK;
+	}
+
+	@VisibleForTesting
+	TobPlayer getPlayer(String name)
+	{
+		return playerMap.get(name);
 	}
 
 	/**
@@ -176,39 +193,39 @@ public class OrbOrderManager
 	 */
 	private void updateRoles()
 	{
-		if (players == null || playerCount == 0)
+		if (currentParty == null || playerCount == 0)
 		{
 			return;
 		}
 
 		if (playerCount == 1)
 		{
-			players[0].setRole(TobRole.SOLO);
+			playerMap.get(currentParty[0]).setRole(TobRole.SOLO);
 			return;
 		}
 
-		players[0].setRole(TobRole.SFRZ);
+		playerMap.get(currentParty[0]).setRole(TobRole.SFRZ);
 
 		// Assign roles based on player count
 		switch (playerCount)
 		{
 			case 2:
-				players[1].setRole(TobRole.RDPS);
+				playerMap.get(currentParty[1]).setRole(TobRole.RDPS);
 				break;
 			case 3:
-				players[1].setRole(TobRole.RDPS);
-				players[2].setRole(TobRole.MDPS);
+				playerMap.get(currentParty[1]).setRole(TobRole.RDPS);
+				playerMap.get(currentParty[2]).setRole(TobRole.MDPS);
 				break;
 			case 4:
-				players[1].setRole(TobRole.MFRZ);
-				players[2].setRole(TobRole.RDPS);
-				players[3].setRole(TobRole.MDPS);
+				playerMap.get(currentParty[1]).setRole(TobRole.MFRZ);
+				playerMap.get(currentParty[2]).setRole(TobRole.RDPS);
+				playerMap.get(currentParty[3]).setRole(TobRole.MDPS);
 				break;
 			case 5:
-				players[1].setRole(TobRole.MFRZ);
-				players[2].setRole(TobRole.RDPS);
-				players[3].setRole(TobRole.MDPS);
-				players[4].setRole(TobRole.MDPS2);
+				playerMap.get(currentParty[1]).setRole(TobRole.MFRZ);
+				playerMap.get(currentParty[2]).setRole(TobRole.RDPS);
+				playerMap.get(currentParty[3]).setRole(TobRole.MDPS);
+				playerMap.get(currentParty[4]).setRole(TobRole.MDPS);
 				break;
 			default:
 				break;

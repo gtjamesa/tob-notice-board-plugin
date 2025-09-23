@@ -1,11 +1,14 @@
 package com.brooklyn.tobnoticeboard.orborder;
 
+import com.brooklyn.tobnoticeboard.TobNoticeBoardPlugin;
 import com.google.inject.Guice;
 import com.google.inject.Inject;
 import com.google.inject.testing.fieldbinder.Bind;
 import com.google.inject.testing.fieldbinder.BoundFieldModule;
 import net.runelite.api.Client;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -59,8 +62,11 @@ public class OrbOrderManagerTest
 		orbOrderManager.startRaid();
 
 		assertEquals(3, orbOrderManager.getLastPlayerCount());
-		assertEquals("Hey Jase", orbOrderManager.getLastRaidPlayers()[1].getName());
-		assertEquals(TobRole.RDPS, orbOrderManager.getLastRaidPlayers()[1].getRole());
+		assertEquals("Hey Jase", orbOrderManager.getLastParty()[1]);
+
+		TobPlayer player = orbOrderManager.getPlayer("Hey Jase");
+		assertEquals("Hey Jase", player.getName());
+		assertEquals(TobRole.RDPS, player.getRole());
 	}
 
 	@Test
@@ -126,5 +132,23 @@ public class OrbOrderManagerTest
 		orbOrderManager.createPlayers();
 
 		assertEquals(OrbStatus.OK, orbOrderManager.getOrbStatus());
+	}
+
+	@Test
+	public void shouldPrunePlayerMap()
+	{
+		setupTrio();
+
+		orbOrderManager.startRaid();
+
+		when(client.getVarcStrValue(330)).thenReturn("Lynx Titan");
+		when(client.getVarcStrValue(331)).thenReturn("Hey Jase");
+		when(client.getVarcStrValue(332)).thenReturn("senZe"); // new mdps has replaced shawnbay
+
+		orbOrderManager.startRaid();
+
+		assertNotNull(orbOrderManager.getPlayer("Lynx Titan"));
+		assertNull(orbOrderManager.getPlayer("ShawnBay"));
+		assertEquals(TobRole.MDPS, orbOrderManager.getPlayer("senZe").getRole());
 	}
 }

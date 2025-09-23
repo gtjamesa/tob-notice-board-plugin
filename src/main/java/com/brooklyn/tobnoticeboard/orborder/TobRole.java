@@ -8,7 +8,6 @@ public enum TobRole
 	MFRZ(1400), // 24x24
 	RDPS(1404),
 	MDPS(1401),
-	MDPS2(1401),
 	SOLO(5735);
 
 	@Getter
