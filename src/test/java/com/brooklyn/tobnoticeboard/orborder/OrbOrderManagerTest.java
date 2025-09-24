@@ -161,4 +161,16 @@ public class OrbOrderManagerTest
 		assertNull(orbOrderManager.getPlayer("ShawnBay"));
 		assertEquals(TobRole.MDPS, orbOrderManager.getPlayer("senZe").getRole());
 	}
+
+	@Test
+	public void shouldFormatPartyString()
+	{
+		Widget widget = mock(Widget.class);
+		when(widget.getText()).thenReturn("Lynx Titan<br>Hey Jase<br>ShawnBay<br>senZe<br>Karma");
+		when(client.getWidget(Constant.TOB_HUD_COMPONENT_ID, Constant.TOB_HUD_CHILD_COMPONENT_ID)).thenReturn(widget);
+
+		orbOrderManager.startRaid();
+
+		assertEquals("Lynx Titan (SFRZ), Hey Jase (MFRZ), ShawnBay (RDPS), senZe (MDPS), Karma (MDPS)", orbOrderManager.getFormattedParty());
+	}
 }

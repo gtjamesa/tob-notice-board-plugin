@@ -115,6 +115,8 @@ public class OrbOrderManager
 		createPlayers();
 		updateRoles();
 		save();
+
+		log.debug("Raid started: {}", getFormattedParty());
 	}
 
 	/**
@@ -281,5 +283,30 @@ public class OrbOrderManager
 			default:
 				break;
 		}
+	}
+
+	String getFormattedParty()
+	{
+		if (lastParty == null || lastPlayerCount == 0)
+		{
+			return null;
+		}
+
+		StringBuilder sb = new StringBuilder();
+		for (int i = 0; i < lastPlayerCount; i++)
+		{
+			TobPlayer player = playerMap.get(lastParty[i]);
+			if (player != null)
+			{
+				sb.append(String.format("%s (%s), ", player.getName(), player.getRole().name()));
+			}
+		}
+
+		if (sb.length() > 2)
+		{
+			sb.setLength(sb.length() - 2); // Remove trailing comma and space
+		}
+
+		return sb.toString();
 	}
 }
