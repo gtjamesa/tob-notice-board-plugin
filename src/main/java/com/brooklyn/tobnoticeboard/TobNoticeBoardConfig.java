@@ -29,10 +29,18 @@ import net.runelite.client.config.ConfigGroup;
 import net.runelite.client.config.ConfigItem;
 
 import java.awt.*;
+import net.runelite.client.config.ConfigSection;
 
-@ConfigGroup("tobnoticeboard")
+@ConfigGroup(Constant.CONFIG_GROUP)
 public interface TobNoticeBoardConfig extends Config
 {
+	@ConfigSection(
+		name = "Orb Order",
+		description = "Highlighting when orb order is incorrect",
+		position = 10
+	)
+	String ORB_ORDER = "Orb Order";
+
 	@ConfigItem(
 		keyName = "highlightFriends",
 		name = "Highlight Friends",
@@ -100,7 +108,7 @@ public interface TobNoticeBoardConfig extends Config
 	}
 
 	@ConfigItem(
-		keyName = TobNoticeBoardPlugin.CONFIG_KEY_HIGHLIGHT_LOBBY,
+		keyName = Constant.CONFIG_KEY_HIGHLIGHT_LOBBY,
 		name = "Highlight in Lobby",
 		description = "Whether or not to highlight names in a lobby",
 		position = 7
@@ -111,7 +119,7 @@ public interface TobNoticeBoardConfig extends Config
 	}
 
 	@ConfigItem(
-		keyName = TobNoticeBoardPlugin.CONFIG_KEY_FRIEND_NOTES,
+		keyName = Constant.CONFIG_KEY_FRIEND_NOTES,
 		name = "Integrate with Friend Notes",
 		description = "Show friend notes on the notice board. Requires the \"Friend Notes\" plugin to be enabled",
 		position = 8
@@ -119,5 +127,27 @@ public interface TobNoticeBoardConfig extends Config
 	default boolean friendNotes()
 	{
 		return true;
+	}
+
+	@ConfigItem(
+		section = ORB_ORDER,
+		keyName = Constant.CONFIG_KEY_ORB_ORDER_ENABLED,
+		name = "Enabled",
+		description = "Tracks orb order and highlights when the order is incorrect"
+	)
+	default boolean orbOrderEnabled()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+		section = ORB_ORDER,
+		keyName = "noticeBoardHighlightColor",
+		name = "Highlight color",
+		description = "Color to highlight notice board"
+	)
+	default Color noticeBoardHighlightColor()
+	{
+		return new Color(255, 154, 0);
 	}
 }

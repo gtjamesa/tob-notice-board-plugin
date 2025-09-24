@@ -1,6 +1,7 @@
 package com.brooklyn.tobnoticeboard.orborder;
 
 import com.brooklyn.tobnoticeboard.Constant;
+import com.brooklyn.tobnoticeboard.TobNoticeBoardConfig;
 import com.google.inject.Guice;
 import com.google.inject.Inject;
 import com.google.inject.testing.fieldbinder.Bind;
@@ -8,6 +9,7 @@ import com.google.inject.testing.fieldbinder.BoundFieldModule;
 import java.util.List;
 import net.runelite.api.Client;
 import net.runelite.api.widgets.Widget;
+import net.runelite.client.ui.overlay.OverlayManager;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -25,6 +27,14 @@ public class OrbOrderManagerTest
 	@Mock
 	@Bind
 	private Client client;
+
+	@Mock
+	@Bind
+	private TobNoticeBoardConfig config;
+
+	@Mock
+	@Bind
+	private OverlayManager overlayManager;
 
 	@Inject
 	OrbOrderManager orbOrderManager;

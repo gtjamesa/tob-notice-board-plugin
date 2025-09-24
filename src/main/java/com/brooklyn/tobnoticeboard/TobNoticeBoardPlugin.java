@@ -24,6 +24,7 @@
  */
 package com.brooklyn.tobnoticeboard;
 
+import com.brooklyn.tobnoticeboard.data.NoticeBoard;
 import com.brooklyn.tobnoticeboard.friendnotes.FriendNoteManager;
 import com.brooklyn.tobnoticeboard.orborder.OrbOrderManager;
 import com.google.inject.Provides;
@@ -32,6 +33,7 @@ import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
 import net.runelite.api.Friend;
 import net.runelite.api.FriendsChatMember;
+import net.runelite.api.GameObject;
 import net.runelite.api.Ignore;
 import net.runelite.api.NameableContainer;
 import net.runelite.api.ScriptID;
@@ -56,8 +58,6 @@ import net.runelite.client.util.Text;
 public class TobNoticeBoardPlugin extends Plugin
 {
 	private static final int DEFAULT_RGB = 0xff981f;
-	public static final String CONFIG_KEY_HIGHLIGHT_LOBBY = "highlightInLobby";
-	public static final String CONFIG_KEY_FRIEND_NOTES = "friendNotes";
 	private boolean friendNotesEnabled = false;
 
 	@Inject
@@ -78,13 +78,17 @@ public class TobNoticeBoardPlugin extends Plugin
 	@Inject
 	private OrbOrderManager orbOrder;
 
+	@Inject
+	private NoticeBoard noticeBoard;
+
 	@Override
 	public void startUp()
 	{
-		setNoticeBoard();
 		eventBus.register(friendNotes);
 		eventBus.register(orbOrder);
 		friendNotes.startUp();
+		orbOrder.startUp();
+		setNoticeBoard();
 	}
 
 	@Override
@@ -94,15 +98,16 @@ public class TobNoticeBoardPlugin extends Plugin
 		eventBus.unregister(friendNotes);
 		eventBus.unregister(orbOrder);
 		friendNotes.shutDown();
+		orbOrder.shutDown();
 	}
 
 	@Subscribe
 	public void onConfigChanged(ConfigChanged event)
 	{
-		if (event.getGroup().equals("tobnoticeboard"))
+		if (event.getGroup().equals(Constant.CONFIG_GROUP))
 		{
 			// Lobby highlighting has been disabled, reset the colors
-			if (event.getKey().equals(CONFIG_KEY_HIGHLIGHT_LOBBY) && !config.highlightInLobby())
+			if (event.getKey().equals(Constant.CONFIG_KEY_HIGHLIGHT_LOBBY) && !config.highlightInLobby())
 			{
 				setLobbyColors(DEFAULT_RGB, DEFAULT_RGB, DEFAULT_RGB);
 				return;
@@ -120,6 +125,7 @@ public class TobNoticeBoardPlugin extends Plugin
 			if (widgetLoaded.getGroupId() == Constant.NOTICE_BOARD_COMPONENT_ID || widgetLoaded.getGroupId() == Constant.LOBBY_COMPONENT_ID)
 			{
 				setNoticeBoard();
+				noticeBoard.find(); // find the notice board game object
 			}
 		});
 	}

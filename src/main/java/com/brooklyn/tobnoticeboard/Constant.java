@@ -2,6 +2,11 @@ package com.brooklyn.tobnoticeboard;
 
 public class Constant
 {
+	public static final String CONFIG_GROUP = "tobnoticeboard";
+	public static final String CONFIG_KEY_HIGHLIGHT_LOBBY = "highlightInLobby";
+	public static final String CONFIG_KEY_FRIEND_NOTES = "friendNotes";
+	public static final String CONFIG_KEY_ORB_ORDER_ENABLED = "orbOrderEnabled";
+
 	public static final int NOTICE_BOARD_COMPONENT_ID = 364;
 	public static final int LOBBY_COMPONENT_ID = 50;
 	public static final int TOB_HUD_COMPONENT_ID = 28;

@@ -22,6 +22,7 @@ import net.runelite.api.gameval.VarbitID;
 import net.runelite.api.widgets.Widget;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.eventbus.Subscribe;
+import net.runelite.client.ui.overlay.OverlayManager;
 import net.runelite.client.util.Text;
 
 @Slf4j
@@ -53,6 +54,22 @@ public class OrbOrderManager
 
 	@Inject
 	private ClientThread clientThread;
+
+	@Inject
+	private OverlayManager overlayManager;
+
+	@Inject
+	private BoardHighlightOverlay boardHighlightOverlay;
+
+	public void startUp()
+	{
+		overlayManager.add(boardHighlightOverlay);
+	}
+
+	public void shutDown()
+	{
+		overlayManager.remove(boardHighlightOverlay);
+	}
 
 	@Subscribe
 	public void onChatMessage(ChatMessage event)
