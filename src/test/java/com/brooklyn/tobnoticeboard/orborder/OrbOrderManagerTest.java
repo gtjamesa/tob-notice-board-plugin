@@ -6,6 +6,7 @@ import com.google.inject.Guice;
 import com.google.inject.Inject;
 import com.google.inject.testing.fieldbinder.Bind;
 import com.google.inject.testing.fieldbinder.BoundFieldModule;
+import java.util.Arrays;
 import java.util.List;
 import net.runelite.api.Client;
 import net.runelite.api.widgets.Widget;
@@ -45,11 +46,16 @@ public class OrbOrderManagerTest
 		Guice.createInjector(BoundFieldModule.of(this)).injectMembers(this);
 	}
 
-	private void setupTrio()
+	private void setupPlayers(String[] players)
 	{
 		Widget widget = mock(Widget.class);
-		when(widget.getText()).thenReturn("Lynx Titan<br>Hey Jase<br>ShawnBay<br>-<br>-");
+		when(widget.getText()).thenReturn(String.join("<br>", players));
 		when(client.getWidget(Constant.TOB_HUD_COMPONENT_ID, Constant.TOB_HUD_CHILD_COMPONENT_ID)).thenReturn(widget);
+	}
+
+	private void setupTrio()
+	{
+		setupPlayers(new String[]{"Lynx Titan", "Hey Jase", "ShawnBay"});
 	}
 
 	@Test
@@ -99,9 +105,7 @@ public class OrbOrderManagerTest
 
 		orbOrderManager.startRaid();
 
-		Widget widget = mock(Widget.class);
-		when(widget.getText()).thenReturn("Lynx Titan<br>ShawnBay<br>Hey Jase<br>-<br>-");
-		when(client.getWidget(Constant.TOB_HUD_COMPONENT_ID, Constant.TOB_HUD_CHILD_COMPONENT_ID)).thenReturn(widget);
+		setupPlayers(new String[]{"Lynx Titan", "ShawnBay", "Hey Jase"});
 
 		orbOrderManager.createPlayers();
 
@@ -115,9 +119,7 @@ public class OrbOrderManagerTest
 
 		orbOrderManager.startRaid();
 
-		Widget widget = mock(Widget.class);
-		when(widget.getText()).thenReturn("Lynx Titan<br>Hey Jase<br>ShawnBay<br>senZe<br>Karma");
-		when(client.getWidget(Constant.TOB_HUD_COMPONENT_ID, Constant.TOB_HUD_CHILD_COMPONENT_ID)).thenReturn(widget);
+		setupPlayers(new String[]{"Lynx Titan", "Hey Jase", "ShawnBay", "senZe", "Karma"});
 
 		orbOrderManager.createPlayers();
 
@@ -127,16 +129,12 @@ public class OrbOrderManagerTest
 	@Test
 	public void shouldBeOkWhenPlayersLeave()
 	{
-		Widget widget = mock(Widget.class);
-		when(widget.getText()).thenReturn("Lynx Titan<br>Hey Jase<br>ShawnBay<br>senZe<br>Karma");
-		when(client.getWidget(Constant.TOB_HUD_COMPONENT_ID, Constant.TOB_HUD_CHILD_COMPONENT_ID)).thenReturn(widget);
+		setupPlayers(new String[]{"Lynx Titan", "Hey Jase", "ShawnBay", "senZe", "Karma"});
 
 		orbOrderManager.startRaid();
 
 		// orbs have swapped here, but players have left so we'll recruit or fix the order when player count matches
-		Widget widget2 = mock(Widget.class);
-		when(widget2.getText()).thenReturn("Lynx Titan<br>ShawnBay<br>Hey Jase<br>-<br>-");
-		when(client.getWidget(Constant.TOB_HUD_COMPONENT_ID, Constant.TOB_HUD_CHILD_COMPONENT_ID)).thenReturn(widget2);
+		setupPlayers(new String[]{"Lynx Titan", "ShawnBay", "Hey Jase"});
 
 		orbOrderManager.createPlayers();
 
@@ -151,9 +149,7 @@ public class OrbOrderManagerTest
 		orbOrderManager.startRaid();
 
 		// new mdps has replaced shawnbay
-		Widget widget = mock(Widget.class);
-		when(widget.getText()).thenReturn("Lynx Titan<br>Hey Jase<br>senZe<br>-<br>-");
-		when(client.getWidget(Constant.TOB_HUD_COMPONENT_ID, Constant.TOB_HUD_CHILD_COMPONENT_ID)).thenReturn(widget);
+		setupPlayers(new String[]{"Lynx Titan", "Hey Jase", "senZe"});
 
 		orbOrderManager.startRaid();
 
@@ -165,9 +161,7 @@ public class OrbOrderManagerTest
 	@Test
 	public void shouldFormatPartyString()
 	{
-		Widget widget = mock(Widget.class);
-		when(widget.getText()).thenReturn("Lynx Titan<br>Hey Jase<br>ShawnBay<br>senZe<br>Karma");
-		when(client.getWidget(Constant.TOB_HUD_COMPONENT_ID, Constant.TOB_HUD_CHILD_COMPONENT_ID)).thenReturn(widget);
+		setupPlayers(new String[]{"Lynx Titan", "Hey Jase", "ShawnBay", "senZe", "Karma"});
 
 		orbOrderManager.startRaid();
 
