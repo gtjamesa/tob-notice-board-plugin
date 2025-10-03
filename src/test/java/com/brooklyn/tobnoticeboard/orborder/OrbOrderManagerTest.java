@@ -105,7 +105,53 @@ public class OrbOrderManagerTest
 
 		orbOrderManager.startRaid();
 
+		// same players, orb order incorrect
 		setupPlayers(new String[]{"Lynx Titan", "ShawnBay", "Hey Jase"});
+
+		orbOrderManager.createPlayers();
+
+		assertEquals(OrbStatus.INCORRECT, orbOrderManager.getOrbStatus());
+	}
+
+	@Test
+	public void shouldBeOkIfNewPlayerReplacesRole()
+	{
+		setupPlayers(new String[]{"Lynx Titan", "Hey Jase", "ShawnBay", "senZe"});
+
+		orbOrderManager.startRaid();
+
+		// new rdps, other roles are correct
+		setupPlayers(new String[]{"Lynx Titan", "Hey Jase", "Karma", "senZe"});
+
+		orbOrderManager.createPlayers();
+
+		assertEquals(OrbStatus.OK, orbOrderManager.getOrbStatus());
+	}
+
+	@Test
+	public void shouldBeOkIfMultiplePlayersReplaceRole()
+	{
+		setupPlayers(new String[]{"Lynx Titan", "Hey Jase", "ShawnBay", "senZe"});
+
+		orbOrderManager.startRaid();
+
+		// new sfrz/rdps, other roles are correct
+		setupPlayers(new String[]{"Zezima", "Hey Jase", "Karma", "senZe"});
+
+		orbOrderManager.createPlayers();
+
+		assertEquals(OrbStatus.OK, orbOrderManager.getOrbStatus());
+	}
+
+	@Test
+	public void shouldBeIncorrectIfMultiplePlayersReplaceRoleAndOrderChanges()
+	{
+		setupPlayers(new String[]{"Lynx Titan", "Hey Jase", "ShawnBay", "senZe"});
+
+		orbOrderManager.startRaid();
+
+		// new sfrz/rdps, mfrz/mdps are in incorrect order
+		setupPlayers(new String[]{"Zezima", "senZe", "Karma", "Hey Jase"});
 
 		orbOrderManager.createPlayers();
 

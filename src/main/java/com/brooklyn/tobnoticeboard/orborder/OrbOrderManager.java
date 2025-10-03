@@ -13,6 +13,7 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import lombok.val;
 import net.runelite.api.ChatMessageType;
 import net.runelite.api.Client;
 import net.runelite.api.events.ChatMessage;
@@ -68,6 +69,7 @@ public class OrbOrderManager
 
 	public void shutDown()
 	{
+		reset();
 		overlayManager.remove(boardHighlightOverlay);
 	}
 
@@ -126,13 +128,19 @@ public class OrbOrderManager
 	{
 		currentParty = new String[Constant.TOB_MAX_PARTY_SIZE];
 		playerCount = 0;
-		List<String> playerNames = fetchPlayerNames();
+		val playerNames = fetchPlayerNames();
 
 		for (int i = 0; i < playerNames.size(); i++)
 		{
-			String playerName = playerNames.get(i);
+			val playerName = playerNames.get(i);
 			currentParty[i] = playerName;
-			playerMap.put(playerName, new TobPlayer(playerName, i));
+
+			// update player's orb position in the mapping
+			// the position will later be saved for checks before the next raid
+			val tobPlayer = playerMap.getOrDefault(playerName, new TobPlayer(playerName));
+			tobPlayer.setOrb(i);
+			playerMap.put(playerName, tobPlayer);
+
 			playerCount++;
 		}
 
@@ -155,12 +163,16 @@ public class OrbOrderManager
 		lastPlayerCount = playerCount;
 
 		// Prune `playerMap` to ensure only contains players in the current party
+		// We will also save their orb position for the next raid
 		playerMap = Arrays.stream(currentParty)
 			.map(name -> playerMap.get(name))
 			.filter(Objects::nonNull)
 			.collect(
 				HashMap::new,
-				(m, p) -> m.put(p.getName(), p),
+				(m, p) -> {
+					p.setSavedOrb(p.getOrb());
+					m.put(p.getName(), p);
+				},
 				HashMap::putAll
 			);
 	}
@@ -192,8 +204,19 @@ public class OrbOrderManager
 				continue;
 			}
 
+			// order is different
 			if (!currentParty[i].equals(lastParty[i]))
 			{
+				// get the player who was in this position for the last raid
+				val lastPlayer = playerMap.get(lastParty[i]);
+
+				// if the previous player's "current" position matches saved, then they have left the raid
+				// this is true because we already know the order is different
+				if (lastPlayer != null && lastPlayer.getSavedOrb() == i && lastPlayer.getOrb() == lastPlayer.getSavedOrb())
+				{
+					continue;
+				}
+
 				return OrbStatus.INCORRECT;
 			}
 		}

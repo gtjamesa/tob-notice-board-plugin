@@ -33,7 +33,6 @@ import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
 import net.runelite.api.Friend;
 import net.runelite.api.FriendsChatMember;
-import net.runelite.api.GameObject;
 import net.runelite.api.Ignore;
 import net.runelite.api.NameableContainer;
 import net.runelite.api.ScriptID;

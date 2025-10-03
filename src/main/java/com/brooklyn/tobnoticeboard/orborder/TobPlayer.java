@@ -1,20 +1,12 @@
 package com.brooklyn.tobnoticeboard.orborder;
 
-import lombok.Getter;
-import lombok.Setter;
+import lombok.Data;
 
-@Getter
+@Data
 public class TobPlayer
 {
-	private String name;
-	private int index;
-
-	@Setter
+	private final String name;
+	private int orb = -1; // current position
+	private int savedOrb = -1; // position when raid started
 	private TobRole role;
-
-	public TobPlayer(String name, int index)
-	{
-		this.name = name;
-		this.index = index;
-	}
 }
