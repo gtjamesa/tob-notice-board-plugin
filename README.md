@@ -11,3 +11,7 @@ Highlight friends and clan members on the Theatre of Blood Notice Board.
 This plugin integrates with the RuneLite [Friend Notes](https://github.com/runelite/runelite/wiki/Friend-Notes) plugin, allowing your note to be viewed alongside the player's name:
 
 ![friend note integration](https://github.com/user-attachments/assets/8f58871d-2b21-4b3e-b6c9-b2d3a79d4209)
+
+## Credits
+
+Credit to [Broooklyn](https://github.com/Broooklyn) for making the [original plugin](https://github.com/Broooklyn/runelite-external-plugins/tree/tob-notice-board).
