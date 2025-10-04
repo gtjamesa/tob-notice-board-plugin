@@ -12,6 +12,10 @@ This plugin integrates with the RuneLite [Friend Notes](https://github.com/runel
 
 ![friend note integration](https://github.com/user-attachments/assets/8f58871d-2b21-4b3e-b6c9-b2d3a79d4209)
 
+## Orb Order Tracking
+
+![](./doc/tob-orb-order.png)
+
 ## Credits
 
 Credit to [Broooklyn](https://github.com/Broooklyn) for making the [original plugin](https://github.com/Broooklyn/runelite-external-plugins/tree/tob-notice-board).
