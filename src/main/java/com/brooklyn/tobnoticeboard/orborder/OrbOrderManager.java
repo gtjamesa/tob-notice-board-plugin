@@ -188,6 +188,14 @@ public class OrbOrderManager
 
 	private OrbStatus checkOrbOrder()
 	{
+		int curHash = Arrays.hashCode(currentParty);
+		int lastHash = Arrays.hashCode(lastParty);
+
+		if (curHash == lastHash)
+		{
+			return OrbStatus.OK;
+		}
+
 		if (playerCount > lastPlayerCount) // players have joined
 		{
 			return OrbStatus.NEW_PLAYERS;
@@ -199,7 +207,7 @@ public class OrbOrderManager
 
 		for (int i = 0; i < currentParty.length; i++)
 		{
-			if (currentParty[i] == null || lastParty == null || lastParty[i] == null)
+			if (currentParty[i] == null || lastParty[i] == null)
 			{
 				continue;
 			}

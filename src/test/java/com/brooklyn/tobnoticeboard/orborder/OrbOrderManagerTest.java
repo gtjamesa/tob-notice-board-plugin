@@ -6,7 +6,6 @@ import com.google.inject.Guice;
 import com.google.inject.Inject;
 import com.google.inject.testing.fieldbinder.Bind;
 import com.google.inject.testing.fieldbinder.BoundFieldModule;
-import java.util.Arrays;
 import java.util.List;
 import net.runelite.api.Client;
 import net.runelite.api.widgets.Widget;
