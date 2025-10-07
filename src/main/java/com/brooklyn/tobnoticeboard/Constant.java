@@ -8,6 +8,7 @@ public class Constant
 	public static final String CONFIG_KEY_HIGHLIGHT_LOBBY = "highlightInLobby";
 	public static final String CONFIG_KEY_FRIEND_NOTES = "friendNotes";
 	public static final String CONFIG_KEY_ORB_ORDER_ENABLED = "orbOrderEnabled";
+	public static final String CONFIG_KEY_ORB_DEBUG_ENABLED = "orbOrderDebug";
 
 	public static final int NOTICE_BOARD_COMPONENT_ID = InterfaceID.TOB_PARTYLIST;
 	public static final int LOBBY_COMPONENT_ID = InterfaceID.TOB_PARTYDETAILS;

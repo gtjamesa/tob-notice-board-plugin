@@ -41,6 +41,14 @@ public interface TobNoticeBoardConfig extends Config
 	)
 	String ORB_ORDER = "Orb Order";
 
+	@ConfigSection(
+		name = "Debug",
+		description = "Debugging options",
+		position = 11,
+		closedByDefault = true
+	)
+	String DEBUG = "Debug";
+
 	@ConfigItem(
 		keyName = "highlightFriends",
 		name = "Highlight Friends",
@@ -149,5 +157,16 @@ public interface TobNoticeBoardConfig extends Config
 	default Color noticeBoardHighlightColor()
 	{
 		return new Color(255, 154, 0);
+	}
+
+	@ConfigItem(
+		section = DEBUG,
+		keyName = Constant.CONFIG_KEY_ORB_DEBUG_ENABLED,
+		name = "Debug",
+		description = "Enable debug mode"
+	)
+	default boolean orbOrderDebug()
+	{
+		return false;
 	}
 }

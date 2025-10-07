@@ -44,18 +44,16 @@ import net.runelite.client.ui.overlay.outline.ModelOutlineRenderer;
 
 public class BoardHighlightOverlay extends Overlay
 {
-	private final Client client;
-	private final NoticeBoard noticeBoard;
 	private final TobNoticeBoardConfig config;
+	private final NoticeBoard noticeBoard;
 	private final OrbOrderManager orbOrder;
 	private final ModelOutlineRenderer modelOutlineRenderer;
 
 	@Inject
-	private BoardHighlightOverlay(Client client, NoticeBoard noticeBoard, TobNoticeBoardConfig config, OrbOrderManager orbOrder, ModelOutlineRenderer modelOutlineRenderer)
+	private BoardHighlightOverlay(TobNoticeBoardConfig config, NoticeBoard noticeBoard, OrbOrderManager orbOrder, ModelOutlineRenderer modelOutlineRenderer)
 	{
-		this.client = client;
-		this.noticeBoard = noticeBoard;
 		this.config = config;
+		this.noticeBoard = noticeBoard;
 		this.orbOrder = orbOrder;
 		this.modelOutlineRenderer = modelOutlineRenderer;
 		setPosition(OverlayPosition.DYNAMIC);
@@ -75,6 +73,11 @@ public class BoardHighlightOverlay extends Overlay
 		String text = "The orb order has changed!";
 		Point textLocation = boardObject.getCanvasTextLocation(graphics, text, boardObject.getRenderable().getModelHeight() + 40);
 		Color color = config.noticeBoardHighlightColor();
+
+		if (config.orbOrderDebug())
+		{
+			text = text + " (" + orbOrder.getOrbStatus() + ")";
+		}
 
 		modelOutlineRenderer.drawOutline(boardObject, 2, color, 1);
 		OverlayUtil.renderTextLocation(graphics, textLocation, text, color);
