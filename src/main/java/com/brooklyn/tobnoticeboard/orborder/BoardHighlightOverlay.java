@@ -65,7 +65,7 @@ public class BoardHighlightOverlay extends Overlay
 	{
 		GameObject boardObject = noticeBoard.getGameObject();
 
-		if (boardObject == null || !config.orbOrderEnabled() || orbOrder.getOrbStatus().equals(OrbStatus.OK))
+		if (boardObject == null || !config.orbOrderEnabled() || !orbOrder.getOrbStatus().equals(OrbStatus.INCORRECT))
 		{
 			return null;
 		}
