@@ -139,6 +139,7 @@ public class OrbOrderManager
 			// the position will later be saved for checks before the next raid
 			val tobPlayer = playerMap.getOrDefault(playerName, new TobPlayer(playerName));
 			tobPlayer.setOrb(i);
+			tobPlayer.setRole(TobRole.MFRZ);
 			playerMap.put(playerName, tobPlayer);
 
 			playerCount++;
@@ -232,8 +233,7 @@ public class OrbOrderManager
 		return OrbStatus.OK;
 	}
 
-	@VisibleForTesting
-	TobPlayer getPlayer(String name)
+	public TobPlayer getPlayer(String name)
 	{
 		return playerMap.get(name);
 	}
@@ -329,7 +329,7 @@ public class OrbOrderManager
 			TobPlayer player = playerMap.get(lastParty[i]);
 			if (player != null)
 			{
-				sb.append(String.format("%s (%s), ", player.getName(), player.getRole().name()));
+				sb.append(String.format("%s (%s), ", player.getName(), player.getRole().getName()));
 			}
 		}
 

@@ -160,6 +160,17 @@ public interface TobNoticeBoardConfig extends Config
 	}
 
 	@ConfigItem(
+		section = ORB_ORDER,
+		keyName = Constant.CONFIG_KEY_ORB_SHOW_ROLE_NAME,
+		name = "Show role names",
+		description = "Show role names in brackets after player names (e.g. \"Player1 (MFRZ)\")"
+	)
+	default boolean orbOrderShowRoleName()
+	{
+		return false;
+	}
+
+	@ConfigItem(
 		section = DEBUG,
 		keyName = Constant.CONFIG_KEY_ORB_DEBUG_ENABLED,
 		name = "Debug",

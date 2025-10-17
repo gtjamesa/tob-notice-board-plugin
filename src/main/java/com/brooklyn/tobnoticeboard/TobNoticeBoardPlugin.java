@@ -30,6 +30,7 @@ import com.brooklyn.tobnoticeboard.orborder.OrbOrderManager;
 import com.google.inject.Provides;
 import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
+import lombok.val;
 import net.runelite.api.Client;
 import net.runelite.api.Friend;
 import net.runelite.api.FriendsChatMember;
@@ -181,15 +182,17 @@ public class TobNoticeBoardPlugin extends Plugin
 
 	private void updatePlayerName(Party party, Widget noticeBoardChild, String nameText, int friendColor, int clanColor, int ignoreColor)
 	{
-		NameableContainer<Ignore> ignoreContainer = client.getIgnoreContainer();
-		NameableContainer<Friend> friendContainer = client.getFriendContainer();
-		String playerName = Text.removeTags(nameText).trim();
+		val ignoreContainer = client.getIgnoreContainer();
+		val friendContainer = client.getFriendContainer();
+		val playerName = Text.removeTags(nameText).trim();
+		val isLobbyPlayer = party.equals(Party.LOBBY) && !playerName.equals("-");
+		String playerNameWithRole = playerName;
 
 		// Don't highlight the local player
-		if (playerName.equals(client.getLocalPlayer().getName()))
-		{
-			return;
-		}
+//		if (playerName.equals(client.getLocalPlayer().getName()))
+//		{
+//			return;
+//		}
 
 		// Highlight friend/clan/ignored players
 		if (ignoreContainer.findByName(playerName) != null)
@@ -211,15 +214,32 @@ public class TobNoticeBoardPlugin extends Plugin
 			}
 		}
 
-		// Add the note icon after the username (only shown on inside lobby widget)
-		if (friendNotesEnabled && party.equals(Party.LOBBY) && !playerName.equals("-"))
+		if (isLobbyPlayer)
 		{
-			final String note = friendNotes.getNote(playerName);
-
-			if (note != null)
+			// Add the role name after the username
+			if (config.orbOrderShowRoleName())
 			{
-				log.debug("Player: {}, Note: {}", playerName, note);
-				friendNotes.updateWidget(noticeBoardChild, playerName);
+				val tobPlayer = orbOrder.getPlayer(playerName);
+				log.debug("Player: {}, Role: {}", playerName, tobPlayer != null ? tobPlayer.getRole() : "null");
+
+				if (tobPlayer != null && tobPlayer.getRole() != null)
+				{
+					playerNameWithRole = playerName + " (" + tobPlayer.getRole().getName() + ")";
+					noticeBoardChild.setText(playerNameWithRole);
+				}
+			}
+
+			// Add the note icon after the username
+			if (friendNotesEnabled)
+			{
+//				final String note = friendNotes.getNote(playerName);
+				val note = "hello there";
+
+				if (note != null)
+				{
+					log.debug("Player: {}, Note: {}", playerName, note);
+					friendNotes.updateWidget(noticeBoardChild, playerNameWithRole);
+				}
 			}
 		}
 	}
