@@ -9,9 +9,12 @@ import javax.annotation.Nullable;
 import javax.inject.Inject;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import net.runelite.api.events.WidgetClosed;
+import net.runelite.api.gameval.InterfaceID;
 import net.runelite.api.widgets.JavaScriptCallback;
 import net.runelite.api.widgets.Widget;
 import net.runelite.client.config.ConfigManager;
+import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.game.ChatIconManager;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginManager;
@@ -64,6 +67,17 @@ public class FriendNoteManager
 	public void shutDown()
 	{
 		overlayManager.remove(overlay);
+		hoveredFriend = null;
+	}
+
+	@Subscribe
+	public void onWidgetClosed(WidgetClosed event)
+	{
+		// Mouse leave listener doesn't fire when the lobby closes under the cursor (eg ESC)
+		if (event.getGroupId() == InterfaceID.TOB_PARTYDETAILS)
+		{
+			hoveredFriend = null;
+		}
 	}
 
 	/**
